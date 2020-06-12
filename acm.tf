@@ -7,7 +7,7 @@ locals {
   }
 }
 
-resource "aws_acm_certificate" "cert" {
+resource "aws_acm_certificate" "this" {
   lifecycle {
     create_before_destroy = true
   }
@@ -19,19 +19,19 @@ resource "aws_acm_certificate" "cert" {
   tags = var.tags
 }
 
-resource "aws_route53_record" "cert" {
+resource "aws_route53_record" "this" {
   for_each = local.cert_domains_unique
 
   allow_overwrite = true
 
   zone_id = var.domains[each.value].zone_id
-  name    = try(aws_acm_certificate.cert.domain_validation_options[each.value].resource_record_name, "")
-  type    = try(aws_acm_certificate.cert.domain_validation_options[each.value].resource_record_type, "CNAME")
-  records = [try(aws_acm_certificate.cert.domain_validation_options[each.value].resource_record_value, "")]
+  name    = try(aws_acm_certificate.this.domain_validation_options[each.value].resource_record_name, "")
+  type    = try(aws_acm_certificate.this.domain_validation_options[each.value].resource_record_type, "CNAME")
+  records = [try(aws_acm_certificate.this.domain_validation_options[each.value].resource_record_value, "")]
   ttl     = var.validation_record_ttl
 }
 
-resource "aws_acm_certificate_validation" "cert" {
-  certificate_arn         = aws_acm_certificate.cert.arn
-  validation_record_fqdns = values(aws_route53_record.cert).*.fqdn
+resource "aws_acm_certificate_validation" "this" {
+  certificate_arn         = aws_acm_certificate.this.arn
+  validation_record_fqdns = values(aws_route53_record.this).*.fqdn
 }
