@@ -5,3 +5,7 @@ output "certificate" {
 
   value = aws_acm_certificate.this
 }
+
+output "unvalidated_domains" {
+  value = local.cert_domain_records_unvalidated
+}

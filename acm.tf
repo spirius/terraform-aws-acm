@@ -1,13 +1,24 @@
 locals {
-  cert_domains       = [for k, v in var.domains : trim(v.domain, ".")]
+  cert_domains       = [for v in var.domains : trim(v.domain, ".")]
   cert_domains_clean = [for d in local.cert_domains : replace(d, "/^\\*\\./", "")]
+  cert_domains_map   = { for v in var.domains : trim(v.domain, ".") => v }
 
-  cert_domains_records = {
-    for domain in distinct(local.cert_domains_clean) :
-    domain => [
+  cert_domain_records = {
+    for k, v in {
       for dvo in aws_acm_certificate.this.domain_validation_options :
-      dvo if replace(dvo.domain_name, "/^\\*\\./", "") == domain
-    ][0]
+      replace(dvo.domain_name, "/^\\*\\./", "") => dvo...
+      if lookup(local.cert_domains_map, dvo.domain_name, { zone_id = null }).zone_id != null
+    } :
+    k => v[0]
+  }
+
+  cert_domain_records_unvalidated = {
+    for k, v in {
+      for dvo in aws_acm_certificate.this.domain_validation_options :
+      replace(dvo.domain_name, "/^\\*\\./", "") => dvo...
+      if lookup(local.cert_domains_map, dvo.domain_name, { zone_id = null }).zone_id == null
+    } :
+    k => v[0]
   }
 
   tags = merge({ Name = local.cert_domains[0] }, var.tags)
@@ -28,9 +39,9 @@ resource "aws_acm_certificate" "this" {
 resource "aws_route53_record" "this" {
   provider = aws.route53
 
-  for_each = local.cert_domains_records
+  for_each = local.cert_domain_records
 
-  allow_overwrite = true
+  allow_overwrite = var.route53_allow_overwrite
 
   zone_id = var.domains[index(local.cert_domains_clean, each.key)].zone_id
   name    = each.value.resource_record_name
@@ -40,6 +51,8 @@ resource "aws_route53_record" "this" {
 }
 
 resource "aws_acm_certificate_validation" "this" {
+  count = length(local.cert_domain_records) > 0 ? 1 : 0
+
   certificate_arn         = aws_acm_certificate.this.arn
   validation_record_fqdns = values(aws_route53_record.this).*.fqdn
 }

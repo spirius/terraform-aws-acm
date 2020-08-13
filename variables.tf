@@ -17,3 +17,8 @@ variable "validation_record_ttl" {
   description = "Route53 validation record TTL."
   default     = 3600
 }
+
+variable "route53_allow_overwrite" {
+  type    = bool
+  default = false
+}
