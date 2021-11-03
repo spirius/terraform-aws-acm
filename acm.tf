@@ -39,7 +39,7 @@ resource "aws_acm_certificate" "this" {
 resource "aws_route53_record" "this" {
   provider = aws.route53
 
-  for_each = nonsensitive(local.cert_domain_records)
+  for_each = local.cert_domain_records
 
   allow_overwrite = var.route53_allow_overwrite
 
@@ -51,7 +51,7 @@ resource "aws_route53_record" "this" {
 }
 
 resource "aws_acm_certificate_validation" "this" {
-  count = length(nonsensitive(local.cert_domain_records)) > 0 ? 1 : 0
+  count = length(local.cert_domain_records) > 0 ? 1 : 0
 
   certificate_arn         = aws_acm_certificate.this.arn
   validation_record_fqdns = values(aws_route53_record.this).*.fqdn
