@@ -7,7 +7,7 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 3.0"
 
-      configuration_aliases = [ aws, aws.route53 ]
+      configuration_aliases = [aws, aws.route53]
     }
   }
 }

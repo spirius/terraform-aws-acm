@@ -54,5 +54,5 @@ resource "aws_acm_certificate_validation" "this" {
   count = length(local.cert_domain_records) > 0 ? 1 : 0
 
   certificate_arn         = aws_acm_certificate.this.arn
-  validation_record_fqdns = values(aws_route53_record.this).*.fqdn
+  validation_record_fqdns = distinct(aws_acm_certificate.this.domain_validation_options.*.resource_record_name)
 }
